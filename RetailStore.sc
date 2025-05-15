@@ -22,4 +22,11 @@ val orders = lines.map(parseLineToOrder)
 //orders.foreach(println)
 
 
-
+def isLessThan30(): Boolean{}
+def applyDiscLessThan30(): Double{}
+def isCheeseOrWineProduct(): Boolean{}
+def applyDiscCheeseOrWine(): Double{}
+def isSoldOn23March(): Boolean{}
+def applyDiscOn23March(): Double{}
+def isBoughtMoreThan5(): Boolean{}
+def applyDiscBoughtMoreThan5():Double{}
