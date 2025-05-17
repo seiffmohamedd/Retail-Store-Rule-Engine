@@ -27,7 +27,7 @@ val orders = lines.map(parseLineToOrder)
 
 //orders.foreach(println)
 
-def splitDates(o : Order ) :(Int , Int , Int , Int) ={
+def splitTimeStamp(o : Order ) :(Int , Int) ={
 
   // splitting time stamp to get day , month
   val stampDate = o.timestamp.split('T')
@@ -35,28 +35,42 @@ def splitDates(o : Order ) :(Int , Int , Int , Int) ={
   val day= stampDateSplit(2).toInt
   val month = stampDateSplit(1).toInt
 
-  //splitting expiry date to get day , month
+  (day , month)
+}
+
+def splitExpiryDate(o : Order ) :(Int , Int) ={
+
   val expDate = o.expiryDate.split("-")
   val expDay = expDate(2).toInt
   val expMonth= expDate(1).toInt
 
-  (day , month , expDay , expMonth)
+  (expDay , expMonth)
 }
 
 def isLessThan30(o: Order): Boolean = {
-  val (stampDay , stampMonth , expDay , expMonth )= splitDates(o)
+  val (stampDay , stampMonth )  = splitTimeStamp(o)
+  val (expDay , expMonth )  = splitExpiryDate(o)
   stampMonth == expMonth
 }
 
 def applyDiscLessThan30(o: Order): Double={
-  val (stampDay , stampMonth , expDay , expMonth )= splitDates(o)
+  val (stampDay , stampMonth )  = splitTimeStamp(o)
+  val (expDay , expMonth )  = splitExpiryDate(o)
   val daysLeft = expDay - stampDay
   val discount = (30 - daysLeft ) / 100
   discount * o.quantity * o.unitPrice
 }
 
-//def isCheeseOrWineProduct(o: Order): Boolean = {}
-//def applyDiscCheeseOrWine(o: Order): Double = {}
+def isCheeseOrWineProduct(o: Order): Boolean = {
+  o.productName.contains("Wine") || o.productName.contains("Cheese")
+}
+
+
+def applyDiscCheeseOrWine(o: Order): Double = {
+  val discount = if(o.productName.contains("Wine")) (5/100) else (10/100)
+  discount* o.unitPrice * o.quantity
+}
+
 //def isSoldOn23March(o: Order): Boolean = {}
 //def applyDiscOn23March(o: Order): Double = {}
 //def isBoughtMoreThan5(o: Order): Boolean = {}
