@@ -58,7 +58,7 @@ def applyDiscLessThan30(o: Order): Double={
   val (expDay , expMonth )  = splitExpiryDate(o)
   val daysLeft = expDay - stampDay
   val discount = (30 - daysLeft ) / 100
-  discount * o.quantity * o.unitPrice
+  discount
 }
 
 def isCheeseOrWineProduct(o: Order): Boolean = {
@@ -68,7 +68,7 @@ def isCheeseOrWineProduct(o: Order): Boolean = {
 
 def applyDiscCheeseOrWine(o: Order): Double = {
   val discount = if(o.productName.contains("Wine")) (5/100) else (10/100)
-  discount * o.unitPrice * o.quantity
+  discount
 }
 
 def isSoldOn23March(o: Order): Boolean = {
@@ -76,7 +76,7 @@ def isSoldOn23March(o: Order): Boolean = {
   day == 23 && month == 3
 }
 def applyDiscOn23March(o: Order): Double = {
-  0.5 * o.unitPrice * o.quantity
+  0.5
 }
 
 def isBoughtMoreThan5(o: Order): Boolean = {
@@ -85,7 +85,7 @@ def isBoughtMoreThan5(o: Order): Boolean = {
 
 def applyDiscBoughtMoreThan5(o: Order):Double = {
   val discount = if(o.quantity >=6 && o.quantity <=9) 0.05 else if(o.quantity >=10 && o.quantity <=14) 0.07 else 0.1
-  discount * o.quantity * o.unitPrice
+  discount
 }
 
 def isApp(o: Order ): Boolean = {
@@ -94,7 +94,7 @@ def isApp(o: Order ): Boolean = {
 
 def applyDiscApp(o: Order): Double= {
   val discount = ((o.quantity - 1) / 5 + 1) * 0.05
-  discount * o.quantity * o.unitPrice
+  discount
 }
 
 
@@ -103,5 +103,33 @@ def isVisa(o:Order): Boolean={
 }
 
 def applyDiscVisa(o: Order): Double={
-  0.05 * o.quantity * o.unitPrice
+  0.05
+}
+
+def calculateBestTwoDiscounts(o: Order, rules: List[(Order => Boolean, Order => Double)]): Double = {
+  val applicableDiscounts = rules
+    .filter { case (condition, _) => condition(o) }
+    .map { case (_, discountFunc) => discountFunc(o) * o.unitPrice * o.quantity }
+
+  val topTwo = applicableDiscounts.sorted(Ordering[Double].reverse).take(2)
+
+  if (topTwo.isEmpty) 0.0 else topTwo.sum / topTwo.size
+}
+
+val allRules = List(
+  (isLessThan30 _, applyDiscLessThan30 _),
+  (isCheeseOrWineProduct _, applyDiscCheeseOrWine _),
+  (isSoldOn23March _, applyDiscOn23March _),
+  (isBoughtMoreThan5 _, applyDiscBoughtMoreThan5 _),
+  (isApp _, applyDiscApp _),
+  (isVisa _, applyDiscVisa _)
+)
+
+//val discount = calculateBestTwoDiscounts(orders.head, allRules)
+
+orders.foreach { order =>
+  val discount = calculateBestTwoDiscounts(order, allRules)
+  val originalPrice = order.unitPrice * order.quantity
+  val finalPrice = originalPrice - discount
+  println(f"Product: ${order.productName}, Final Price: ${finalPrice}")
 }
