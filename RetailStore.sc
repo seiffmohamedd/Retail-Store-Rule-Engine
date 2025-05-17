@@ -68,10 +68,40 @@ def isCheeseOrWineProduct(o: Order): Boolean = {
 
 def applyDiscCheeseOrWine(o: Order): Double = {
   val discount = if(o.productName.contains("Wine")) (5/100) else (10/100)
-  discount* o.unitPrice * o.quantity
+  discount * o.unitPrice * o.quantity
 }
 
-//def isSoldOn23March(o: Order): Boolean = {}
-//def applyDiscOn23March(o: Order): Double = {}
-//def isBoughtMoreThan5(o: Order): Boolean = {}
-//def applyDiscBoughtMoreThan5(o: Order):Double = {}
+def isSoldOn23March(o: Order): Boolean = {
+  val (day , month) = splitTimeStamp(o)
+  day == 23 && month == 3
+}
+def applyDiscOn23March(o: Order): Double = {
+  0.5 * o.unitPrice * o.quantity
+}
+
+def isBoughtMoreThan5(o: Order): Boolean = {
+  o.quantity >= 5
+}
+
+def applyDiscBoughtMoreThan5(o: Order):Double = {
+  val discount = if(o.quantity >=6 && o.quantity <=9) 0.05 else if(o.quantity >=10 && o.quantity <=14) 0.07 else 0.1
+  discount * o.quantity * o.unitPrice
+}
+
+def isApp(o: Order ): Boolean = {
+  o.channel == "App"
+}
+
+def applyDiscApp(o: Order): Double= {
+  val discount = ((o.quantity - 1) / 5 + 1) * 0.05
+  discount * o.quantity * o.unitPrice
+}
+
+
+def isVisa(o:Order): Boolean={
+  o.paymentMethod == "Visa"
+}
+
+def applyDiscVisa(o: Order): Double={
+  0.05 * o.quantity * o.unitPrice
+}
