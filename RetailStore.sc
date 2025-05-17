@@ -1,7 +1,12 @@
 import scala.io.Source
 
-case class Order(timestamp: String,productName: String, expiryDate: String, quantity: Int, unitPrice: Float, channel: String,
+case class Order(timestamp: String ,
+                 productName: String,
+                 expiryDate: String ,
+                 quantity: Int, unitPrice: Float,
+                 channel: String,
                  paymentMethod: String)
+
 
 def parseLineToOrder(line: String): Order = {
   val fields = line.split(",")
@@ -16,17 +21,43 @@ def parseLineToOrder(line: String): Order = {
   )
 }
 
+
 val lines = Source.fromFile("E:\\ITI 9 Months\\Scala\\Retail-Store-Rule-Engine\\TRX1000.csv").getLines().toList.tail
 val orders = lines.map(parseLineToOrder)
 
 //orders.foreach(println)
 
+def splitDates(o : Order ) :(Int , Int , Int , Int) ={
 
-def isLessThan30(): Boolean{}
-def applyDiscLessThan30(): Double{}
-def isCheeseOrWineProduct(): Boolean{}
-def applyDiscCheeseOrWine(): Double{}
-def isSoldOn23March(): Boolean{}
-def applyDiscOn23March(): Double{}
-def isBoughtMoreThan5(): Boolean{}
-def applyDiscBoughtMoreThan5():Double{}
+  // splitting time stamp to get day , month
+  val stampDate = o.timestamp.split('T')
+  val stampDateSplit = stampDate(0).split("-")
+  val day= stampDateSplit(2).toInt
+  val month = stampDateSplit(1).toInt
+
+  //splitting expiry date to get day , month
+  val expDate = o.expiryDate.split("-")
+  val expDay = expDate(2).toInt
+  val expMonth= expDate(1).toInt
+
+  (day , month , expDay , expMonth)
+}
+
+def isLessThan30(o: Order): Boolean = {
+  val (stampDay , stampMonth , expDay , expMonth )= splitDates(o)
+  stampMonth == expMonth
+}
+
+def applyDiscLessThan30(o: Order): Double={
+  val (stampDay , stampMonth , expDay , expMonth )= splitDates(o)
+  val daysLeft = expDay - stampDay
+  val discount = (30 - daysLeft ) / 100
+  discount * o.quantity * o.unitPrice
+}
+
+//def isCheeseOrWineProduct(o: Order): Boolean = {}
+//def applyDiscCheeseOrWine(o: Order): Double = {}
+//def isSoldOn23March(o: Order): Boolean = {}
+//def applyDiscOn23March(o: Order): Double = {}
+//def isBoughtMoreThan5(o: Order): Boolean = {}
+//def applyDiscBoughtMoreThan5(o: Order):Double = {}
