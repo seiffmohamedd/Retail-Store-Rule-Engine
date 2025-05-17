@@ -9,3 +9,5 @@
 /dataSources/
 /dataSources.local.xml
 .idea/
+mysql-connector-j-9.2.0/
+/mysql-connector-j-9.2.0.jar

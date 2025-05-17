@@ -1,4 +1,5 @@
 import scala.io.Source
+import java.sql.DriverManager
 
 case class Order(timestamp: String ,
                  productName: String,
@@ -127,9 +128,35 @@ val allRules = List(
 
 //val discount = calculateBestTwoDiscounts(orders.head, allRules)
 
+//orders.foreach { order =>
+//  val discount = calculateBestTwoDiscounts(order, allRules)
+//  val originalPrice = order.unitPrice * order.quantity
+//  val finalPrice = originalPrice - discount
+//  println(f"Product: ${order.productName}, Final Price: ${finalPrice}")
+//}
+
+val url: String = "jdbc:mysql://localhost:3306/Retail_Store?useSSL=false&serverTimezone=UTC"
+val username: String = "root"
+val password: String = "seif"
+
+Class.forName("com.mysql.cj.jdbc.Driver")
+val connection = DriverManager.getConnection(url, username, password)
+
+val insertSql = "INSERT INTO Orders (timestamp, product_name, expiry_date, quantity, unit_price, channel, payment_method, final_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+val pstmt = connection.prepareStatement(insertSql)
+
 orders.foreach { order =>
   val discount = calculateBestTwoDiscounts(order, allRules)
-  val originalPrice = order.unitPrice * order.quantity
-  val finalPrice = originalPrice - discount
-  println(f"Product: ${order.productName}, Final Price: ${finalPrice}")
+  val finalPrice = order.unitPrice * order.quantity - discount
+
+  pstmt.setString(1, order.timestamp)
+  pstmt.setString(2, order.productName)
+  pstmt.setString(3, order.expiryDate)
+  pstmt.setInt(4, order.quantity)
+  pstmt.setFloat(5, order.unitPrice)
+  pstmt.setString(6, order.channel)
+  pstmt.setString(7, order.paymentMethod)
+  pstmt.setFloat(8, finalPrice.toFloat)
+
+  pstmt.executeUpdate()
 }
