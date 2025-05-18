@@ -1,5 +1,20 @@
 import scala.io.Source
 import java.sql.DriverManager
+import java.util.logging.{Logger, FileHandler, SimpleFormatter, Level, LogRecord}
+import java.text.SimpleDateFormat
+import java.util.Date
+
+
+val logger: Logger = Logger.getLogger("RulesEngineLogger")
+val fileHandler = new FileHandler("E:\\ITI 9 Months\\Scala\\Retail-Store-Rule-Engine\\rules_engine.log", true) // Append mode
+fileHandler.setFormatter(new SimpleFormatter() {
+  override def format(record: LogRecord): String = {
+    val timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(record.getMillis))
+    f"$timestamp%-20s ${record.getLevel.getName}%-10s ${record.getMessage}%s\n"
+  }
+})
+logger.addHandler(fileHandler)
+logger.setUseParentHandlers(false) // Disable console output
 
 case class Order(timestamp: String ,
                  productName: String,
@@ -22,7 +37,7 @@ def parseLineToOrder(line: String): Order = {
   )
 }
 
-
+logger.info("Started reading and parsing CSV file.")
 val lines = Source.fromFile("E:\\ITI 9 Months\\Scala\\Retail-Store-Rule-Engine\\TRX1000.csv").getLines().toList.tail
 val orders = lines.map(parseLineToOrder)
 
@@ -30,7 +45,7 @@ val orders = lines.map(parseLineToOrder)
 
 def splitTimeStamp(o : Order ) :(Int , Int) ={
 
-  // splitting time stamp to get day , month
+  // splitting time stamp column to get day , month
   val stampDate = o.timestamp.split('T')
   val stampDateSplit = stampDate(0).split("-")
   val day= stampDateSplit(2).toInt
@@ -110,11 +125,20 @@ def applyDiscVisa(o: Order): Double={
 def calculateBestTwoDiscounts(o: Order, rules: List[(Order => Boolean, Order => Double)]): Double = {
   val applicableDiscounts = rules
     .filter { case (condition, _) => condition(o) }
-    .map { case (_, discountFunc) => discountFunc(o) * o.unitPrice * o.quantity }
-
+    .map { case (_, discountFunc) =>
+      val d = discountFunc(o) * o.unitPrice * o.quantity
+      logger.fine(s"Applied rule: Discount = $d for product ${o.productName}")
+      d }
   val topTwo = applicableDiscounts.sorted(Ordering[Double].reverse).take(2)
 
-  if (topTwo.isEmpty) 0.0 else topTwo.sum / topTwo.size
+  if (topTwo.isEmpty) {
+    logger.info(s"No discounts applicable for order: ${o.productName}")
+    0.0
+  } else {
+    val avgDiscount = topTwo.sum / topTwo.size
+    logger.info(f"Order ${o.productName}: Best 2 discounts total = ${topTwo.sum}%.2f, average = $avgDiscount%.2f")
+    avgDiscount
+  }
 }
 
 val allRules = List(
@@ -126,23 +150,14 @@ val allRules = List(
   (isVisa _, applyDiscVisa _)
 )
 
-//val discount = calculateBestTwoDiscounts(orders.head, allRules)
-
-//orders.foreach { order =>
-//  val discount = calculateBestTwoDiscounts(order, allRules)
-//  val originalPrice = order.unitPrice * order.quantity
-//  val finalPrice = originalPrice - discount
-//  println(f"Product: ${order.productName}, Final Price: ${finalPrice}")
-//}
-
-val url: String = "jdbc:mysql://localhost:3306/Retail_Store?useSSL=false&serverTimezone=UTC"
+val url: String = "jdbc:mysql://localhost:3306/Retail_Store"
 val username: String = "root"
 val password: String = "seif"
 
 Class.forName("com.mysql.cj.jdbc.Driver")
 val connection = DriverManager.getConnection(url, username, password)
 
-val insertSql = "INSERT INTO Orders (timestamp, product_name, expiry_date, quantity, unit_price, channel, payment_method, final_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+val insertSql = "insert into Orders (timestamp, product_name, expiry_date, quantity, unit_price, channel, payment_method, final_price) values (?, ?, ?, ?, ?, ?, ?, ?)"
 val pstmt = connection.prepareStatement(insertSql)
 
 orders.foreach { order =>
@@ -159,4 +174,5 @@ orders.foreach { order =>
   pstmt.setFloat(8, finalPrice.toFloat)
 
   pstmt.executeUpdate()
+  logger.info(s"Inserted order for ${order.productName}, final price: $finalPrice%.2f")
 }
