@@ -20,5 +20,4 @@ select * from Orders;
 
 
 
-
-delete from Orders;
+drop table Orders;
