@@ -191,34 +191,3 @@ val allRules = List(
   (isVisa _, applyDiscVisa _)
 )
 
-// MySQL connection string with username and password
-val url: String = "jdbc:mysql://localhost:3306/Retail_Store"
-val username: String = "root"
-val password: String = "seif"
-
-// Load MySQL JDBC driver
-Class.forName("com.mysql.cj.jdbc.Driver")
-val connection = DriverManager.getConnection(url, username, password)
-
-// Prepare insert SQL statement
-val insertSql =
-  "INSERT INTO Orders (timestamp, product_name, expiry_date, quantity, unit_price, channel, payment_method, final_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-val pstmt = connection.prepareStatement(insertSql)
-
-// For each order: calculate best 2 discounts and final price, then insert into DB
-orders.foreach { order =>
-  val discount = calculateBestTwoDiscounts(order, allRules)
-  val finalPrice = order.unitPrice * order.quantity - discount
-
-  pstmt.setString(1, order.timestamp)
-  pstmt.setString(2, order.productName)
-  pstmt.setString(3, order.expiryDate)
-  pstmt.setInt(4, order.quantity)
-  pstmt.setFloat(5, order.unitPrice)
-  pstmt.setString(6, order.channel)
-  pstmt.setString(7, order.paymentMethod)
-  pstmt.setFloat(8, finalPrice.toFloat)
-
-  pstmt.executeUpdate()
-  logger.info(f"Inserted order for ${order.productName}, final price: $finalPrice%.2f")
-}
